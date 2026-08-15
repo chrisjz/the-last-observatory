@@ -8,6 +8,14 @@
 <meta property="og:title" content="The Last Observatory">
 <meta property="og:description" content="Turn one dial through the entire history of the universe — 10⁻⁴³ seconds to 10¹⁰⁰ years.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://chrisjz.github.io/the-last-observatory/">
+<meta property="og:image" content="https://chrisjz.github.io/the-last-observatory/assets/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Last Observatory">
+<meta name="twitter:description" content="Turn one dial through the entire history of the universe — 10⁻⁴³ seconds to 10¹⁰⁰ years.">
+<meta name="twitter:image" content="https://chrisjz.github.io/the-last-observatory/assets/og-card.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔭</text></svg>">
 <title>The Last Observatory</title>
 <style>
@@ -717,6 +725,17 @@ el('openBtn').addEventListener('click',()=>{
   else introAnim={start:performance.now(),dur:8000};
   dial.focus({preventScroll:true});
 });
+
+/* deep link: #lt=17.64 (log10 of t in seconds) jumps straight there, no intro */
+{
+  const dl=(location.hash+location.search).match(/lt=(-?\d+(?:\.\d+)?)/);
+  if(dl){
+    cur=target=lt2u(clamp(parseFloat(dl[1]),LOGMIN,LOGMAX));
+    el('intro').classList.add('gone');
+    el('intro').style.display='none';
+    el('hint').classList.add('hide');
+  }
+}
 
 /* ============================================================
    MAIN LOOP

@@ -4,6 +4,8 @@
 
 An instrument at the end of time.
 
+[![The dial turning through the eras of the universe — the Planck epoch, inflation, the primordial plasma, first light, cosmic dawn, the age of galaxies, the last black hole](assets/preview.gif)](https://chrisjz.github.io/the-last-observatory/)
+
 You are standing after the last black hole has evaporated, operating an archive
 machine that holds the complete memory of the universe. One logarithmic dial
 spans **157 orders of magnitude** — from the Planck epoch (10⁻⁴³ seconds) to
@@ -22,6 +24,11 @@ entry changes depending on how many you've read.
 | `Space` | Run time forward automatically |
 | `M` | Toggle sound |
 | Click a ◆ pin | Jump to that memory |
+
+**Deep links** — append `#lt=<log₁₀ of seconds>` to jump straight to a moment,
+skipping the intro: [`#lt=13.08`](https://chrisjz.github.io/the-last-observatory/#lt=13.08)
+opens at first light, [`#lt=107.5`](https://chrisjz.github.io/the-last-observatory/#lt=107.5)
+at the evaporation of the last black hole.
 
 ## How it works
 
