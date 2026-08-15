@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="An instrument at the end of time: scrub 157 orders of magnitude, from the Planck epoch to the last black hole, and recover thirteen pinned memories of the universe.">
+<meta property="og:title" content="The Last Observatory">
+<meta property="og:description" content="Turn one dial through the entire history of the universe — 10⁻⁴³ seconds to 10¹⁰⁰ years.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔭</text></svg>">
+<title>The Last Observatory</title>
+<style>
+  /* Committed single-theme design: an instrument panel in the dark at the end of time.
+     Every color painted explicitly so the page holds on any host ground. */
+  :root{
+    --void:#04060c;
+    --panel:rgba(6,9,16,.62);
+    --hairline:rgba(140,170,220,.16);
+    --amber:#e8a558;
+    --amber-dim:rgba(232,165,88,.45);
+    --signal:#7fd8d4;
+    --ink:#e6e1d3;
+    --ink-dim:rgba(230,225,211,.45);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--void);color:var(--ink);
+    font-family:var(--mono);overflow:hidden;
+    -webkit-user-select:none;user-select:none;
+  }
+  #scene{position:fixed;inset:0;display:block}
+
+  /* ---------- telemetry ---------- */
+  .telemetry{
+    position:fixed;top:16px;left:16px;z-index:5;
+    background:var(--panel);border:1px solid var(--hairline);
+    padding:12px 16px 13px;min-width:288px;max-width:min(360px,calc(100vw - 32px));
+    backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+    font-size:11px;line-height:1.9;letter-spacing:.06em;
+    border-radius:2px;
+  }
+  .telemetry .row{display:flex;gap:12px}
+  .telemetry .lb{color:var(--ink-dim);width:42px;flex:none;font-size:9px;letter-spacing:.22em;padding-top:2px}
+  .telemetry .vl{color:var(--amber);font-variant-numeric:tabular-nums}
+  .telemetry .vl.sky{color:#c9d2e2;font-family:var(--serif);font-style:italic;font-size:12.5px;letter-spacing:.02em;line-height:1.5;padding-top:2px}
+
+  /* ---------- controls ---------- */
+  .controls{position:fixed;top:16px;right:16px;z-index:5;display:flex;gap:8px;align-items:flex-start}
+  .chip,.btn{
+    font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    background:var(--panel);border:1px solid var(--hairline);color:var(--ink-dim);
+    padding:8px 12px;border-radius:2px;backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+  }
+  .chip b{color:var(--signal);font-weight:400}
+  .btn{cursor:pointer;color:var(--amber);border-color:var(--amber-dim);transition:background .2s,color .2s}
+  .btn:hover{background:rgba(232,165,88,.12)}
+  .btn:focus-visible{outline:1px solid var(--amber);outline-offset:2px}
+  .btn[aria-pressed="true"]{background:rgba(232,165,88,.16);color:#f5c98a}
+
+  /* ---------- dial ---------- */
+  .dial-wrap{
+    position:fixed;left:0;right:0;bottom:0;z-index:6;
+    padding:26px 22px 12px;
+    background:linear-gradient(to top,rgba(4,6,12,.92) 55%,rgba(4,6,12,0));
+  }
+  #dial{width:100%;height:88px;display:block;cursor:ew-resize;touch-action:none;outline:none}
+  #dial:focus-visible{outline:1px solid var(--amber);outline-offset:3px}
+  .hint{
+    text-align:center;font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+    color:rgba(230,225,211,.35);margin-top:8px;transition:opacity 1.2s;
+  }
+  .hint.hide{opacity:0}
+  #pintip{
+    position:fixed;z-index:7;pointer-events:none;display:none;
+    font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--signal);
+    background:rgba(6,9,16,.9);border:1px solid rgba(127,216,212,.3);
+    padding:4px 9px;border-radius:2px;transform:translate(-50%,-100%);white-space:nowrap;
+  }
+
+  /* ---------- vignette ---------- */
+  .vignette{
+    position:fixed;left:24px;top:50%;transform:translateY(-46%);z-index:5;
+    width:min(370px,calc(100vw - 48px));
+    background:rgba(6,9,16,.8);border:1px solid rgba(127,216,212,.28);
+    padding:22px 26px 20px;border-radius:2px;
+    backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+    opacity:0;transition:opacity .55s ease,transform .55s ease;pointer-events:none;
+  }
+  .vignette.show{opacity:1;transform:translateY(-50%)}
+  .vignette .k{font-size:9px;letter-spacing:.26em;color:var(--signal);text-transform:uppercase}
+  .vignette h3{
+    font-family:var(--serif);font-weight:600;font-size:23px;letter-spacing:.01em;
+    margin:9px 0 10px;color:#f1ebda;text-wrap:balance;
+  }
+  .vignette p{font-family:var(--serif);font-size:14.5px;line-height:1.68;margin:0;color:#d9d3c3}
+  .vignette .t{font-size:10px;letter-spacing:.14em;color:var(--amber);margin-top:14px;font-variant-numeric:tabular-nums}
+
+  /* ---------- intro ---------- */
+  .intro{
+    position:fixed;inset:0;z-index:20;background:var(--void);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:24px;transition:opacity 1.4s ease;
+  }
+  .intro.gone{opacity:0;pointer-events:none}
+  .intro .eyebrow{font-size:10px;letter-spacing:.42em;color:var(--amber-dim);text-transform:uppercase;margin-bottom:26px}
+  .intro h1{
+    font-family:var(--serif);font-weight:600;font-size:clamp(34px,6vw,56px);
+    letter-spacing:.06em;margin:0 0 30px;color:#f1ebda;text-wrap:balance;
+  }
+  .intro .lede{
+    font-family:var(--serif);font-size:clamp(15px,2vw,17.5px);line-height:1.8;
+    max-width:46ch;color:#cfc9b9;margin:0 0 40px;
+  }
+  .intro .lede em{color:var(--signal);font-style:normal}
+  .open-btn{
+    font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--amber);background:none;border:1px solid var(--amber-dim);
+    padding:15px 34px;cursor:pointer;border-radius:2px;transition:background .25s,color .25s;
+  }
+  .open-btn:hover{background:rgba(232,165,88,.14);color:#f5c98a}
+  .open-btn:focus-visible{outline:1px solid var(--amber);outline-offset:3px}
+  .intro .fine{margin-top:34px;font-size:9px;letter-spacing:.24em;color:rgba(230,225,211,.28);text-transform:uppercase}
+
+  @media (max-width:760px){
+    .telemetry{min-width:0;font-size:10px}
+    .telemetry .row.optional{display:none}
+    .vignette{left:50%;top:auto;bottom:150px;transform:translate(-50%,8px)}
+    .vignette.show{transform:translate(-50%,0)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition-duration:.01s !important}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+
+<div class="telemetry" aria-live="off">
+  <div class="row"><span class="lb">T +</span><span class="vl" id="tAge">—</span></div>
+  <div class="row"><span class="lb">TEMP</span><span class="vl" id="tTemp">—</span></div>
+  <div class="row"><span class="lb">ERA</span><span class="vl" id="tEra">—</span></div>
+  <div class="row optional"><span class="lb">SKY</span><span class="vl sky" id="tSky">—</span></div>
+</div>
+
+<div class="controls">
+  <div class="chip">memory <b id="memCount">00</b>/13</div>
+  <button class="btn" id="runBtn" aria-pressed="false">▶ run time</button>
+  <button class="btn" id="sndBtn" aria-pressed="false">sound</button>
+</div>
+
+<aside class="vignette" id="vignette" aria-live="polite">
+  <div class="k" id="vK">entry</div>
+  <h3 id="vTitle"></h3>
+  <p id="vBody"></p>
+  <div class="t" id="vTime"></div>
+</aside>
+
+<div class="dial-wrap">
+  <canvas id="dial" tabindex="0" role="slider" aria-label="Time dial, from the Planck epoch to the end of time"
+    aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"></canvas>
+  <div class="hint" id="hint">◂ drag the dial · scroll · arrow keys · space runs time · ◆ pins hold memories</div>
+</div>
+<div id="pintip"></div>
+
+<div class="intro" id="intro">
+  <div class="eyebrow">Archive instrument · final era</div>
+  <h1>The Last Observatory</h1>
+  <p class="lede">You are standing at the end of time. Every star has gone out; the last
+    black hole has evaporated. This instrument holds the complete memory of the
+    universe — all 10<sup>100</sup> years of it — on a single dial.
+    <em>Thirteen moments are pinned in the record.</em> Find them.</p>
+  <button class="open-btn" id="openBtn">Open the aperture</button>
+  <div class="fine">range · 157 orders of magnitude · sound optional</div>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   THE LAST OBSERVATORY
+   One dial, 157 decades: log10(t/seconds) ∈ [-43, 114]
+   ============================================================ */
+const LOGMIN=-43, LOGMAX=114, LOGSPAN=LOGMAX-LOGMIN;
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const clamp=(x,a,b)=>x<a?a:x>b?b:x;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t)};
+// trapezoid weight over [a,b] with fade width f (decades)
+const band=(lt,a,b,f)=>smooth(a-f,a,lt)*(1-smooth(b,b+f,lt));
+const gaussW=(x,m,s)=>Math.exp(-((x-m)*(x-m))/(2*s*s));
+const u2lt=u=>LOGMIN+u*LOGSPAN, lt2u=lt=>(lt-LOGMIN)/LOGSPAN;
+
+/* ---------- physics: temperature of the universe, log10 K vs log10 s ---------- */
+const TEMP_PTS=[[-43,32.1],[-36,28],[-32,25],[-12,15],[-6,12],[0,10],[2,9],
+  [13.08,3.48],[17.64,0.4356],[20,-1.5],[25,-6],[40,-15],[60,-22],[90,-28],[114,-30]];
+function interp(pts,x){
+  if(x<=pts[0][0])return pts[0][1];
+  for(let i=1;i<pts.length;i++){
+    if(x<=pts[i][0]){const[a,va]=pts[i-1],[b,vb]=pts[i];return lerp(va,vb,(x-a)/(b-a));}
+  }
+  return pts[pts.length-1][1];
+}
+const logTemp=lt=>interp(TEMP_PTS,lt);
+
+// blackbody-ish color from log10(T)
+const BB=[[9.5,[224,214,255]],[7,[198,214,255]],[5.5,[236,241,255]],[4.2,[255,246,230]],
+  [3.75,[255,228,184]],[3.45,[255,176,96]],[3.0,[205,86,44]],[2.5,[128,34,22]],[2.0,[50,12,10]]];
+function bbColor(lT){
+  if(lT>=BB[0][0])return BB[0][1];
+  for(let i=1;i<BB.length;i++){
+    if(lT>=BB[i][0]){const[a,ca]=BB[i-1],[b,cb]=BB[i],t=(lT-a)/(b-a);
+      return[lerp(ca[0],cb[0],t),lerp(ca[1],cb[1],t),lerp(ca[2],cb[2],t)];}
+  }
+  return BB[BB.length-1][1];
+}
+
+/* ---------- formatting (unicode superscripts) ---------- */
+const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','-':'⁻'};
+const sup=n=>String(n).split('').map(c=>SUP[c]||c).join('');
+const YR=3.156e7;
+function sci(v,unit){
+  const e=Math.floor(Math.log10(v)), m=v/Math.pow(10,e);
+  return (m>=9.95?'10':m.toFixed(1)+'×10')+sup(m>=9.95?e+1:e)+' '+unit;
+}
+function fmtAge(lt){
+  const t=Math.pow(10,lt);
+  if(t<1e-3)return sci(t,'s');
+  if(t<60)return t<1?t.toFixed(3)+' s':t.toFixed(1)+' s';
+  if(t<3600)return (t/60).toFixed(1)+' min';
+  if(t<86400)return (t/3600).toFixed(1)+' hr';
+  if(t<YR)return (t/86400).toFixed(1)+' days';
+  const y=t/YR;
+  if(y<1e6)return Math.round(y).toLocaleString('en-US')+' yr';
+  if(y<1e9)return (y/1e6).toFixed(1)+' million yr';
+  if(y<1e12)return (y/1e9).toFixed(2)+' billion yr';
+  return sci(y,'yr');
+}
+function fmtTemp(lT){
+  const T=Math.pow(10,lT);
+  if(lT>=5)return sci(T,'K');
+  if(lT>=1)return Math.round(T).toLocaleString('en-US')+' K';
+  if(lT>=-1)return T.toFixed(2)+' K';
+  return sci(T,'K');
+}
+
+/* ---------- eras ---------- */
+const ERAS=[
+  {a:-43,b:-36,name:'Planck epoch',sky:'No space to see across; geometry itself fluctuates.',tint:'rgba(220,210,255,.10)'},
+  {a:-36,b:-32,name:'Inflation',sky:'Space doubling every 10⁻³⁷ seconds.',tint:'rgba(200,190,255,.14)'},
+  {a:-32,b:-12,name:'Electroweak epoch',sky:'The four forces separating; particles acquiring mass.',tint:'rgba(255,190,120,.09)'},
+  {a:-12,b:0,name:'Quark & hadron epochs',sky:'A plasma hotter than any star’s core; quarks freeze into protons.',tint:'rgba(255,170,90,.11)'},
+  {a:0,b:3.1,name:'Nucleosynthesis',sky:'The whole universe fuses like a stellar core.',tint:'rgba(255,220,120,.12)'},
+  {a:3.1,b:13.08,name:'Photon epoch',sky:'An opaque glowing fog; light scatters endlessly.',tint:'rgba(255,180,100,.08)'},
+  {a:13.08,b:15.8,name:'Dark ages',sky:'Transparent, dark, and starless; hydrogen drifts.',tint:'rgba(70,90,140,.10)'},
+  {a:15.8,b:16.5,name:'Cosmic dawn',sky:'The first stars ignite in the dark.',tint:'rgba(140,180,255,.10)'},
+  {a:16.5,b:21.5,name:'Stelliferous era',sky:'Galaxies of living stars; the age of light.',tint:'rgba(160,220,230,.10)'},
+  {a:21.5,b:47.5,name:'Degenerate era',sky:'Dead remnants cool in an expanding dark.',tint:'rgba(180,80,60,.07)'},
+  {a:47.5,b:107.5,name:'Black hole era',sky:'Only black holes remain, slowly evaporating.',tint:'rgba(120,110,160,.06)'},
+  {a:107.5,b:114,name:'Dark era',sky:'Stray photons, and the possibility of chance.',tint:'rgba(90,100,120,.04)'},
+];
+const eraAt=lt=>ERAS.find(e=>lt>=e.a&&lt<e.b)||ERAS[ERAS.length-1];
+
+/* ---------- the thirteen memories ---------- */
+const MOMENTS=[
+  {id:1,lt:-43,hw:1.2,title:'The First Moment',
+   body:'Before this, the record does not exist — not blank; absent. Time itself begins here, at 10⁻⁴³ seconds. Everything the dial can reach — every star, every word, you — is already present, folded into a point smaller than any possible measurement.'},
+  {id:2,lt:-35.5,hw:0.9,title:'Inflation',
+   body:'For less than a heartbeat of a heartbeat, space itself ran. In 10⁻³³ seconds the universe grew by a factor of 10²⁶ or more. The quantum wrinkles stretched into it will one day be galaxies. Every structure you have ever seen is a fossil of this instant.'},
+  {id:3,lt:-6,hw:1.2,title:'Matter Wins',
+   body:'One part in a billion. That was the surplus of matter over antimatter when the two annihilated in these first microseconds. Everything else became light. Every atom that will ever exist is made from the rounding error.'},
+  {id:4,lt:2.26,hw:0.7,title:'The First Furnace',
+   body:'For about seventeen minutes, the entire universe was the core of a star. Hydrogen fused into helium — then the cooling expansion smothered the furnace, and the recipe was fixed: three parts hydrogen, one part helium. The hydrogen in every drop of water was made here, and never again.'},
+  {id:5,lt:13.08,hw:0.45,title:'First Light',
+   body:'The fog lifts. Electrons finally settle around nuclei, and light — trapped since the beginning — flies free in every direction at once. It is still flying. Your era called it the cosmic microwave background: the oldest photograph, in which everything is three thousand kelvin and nothing yet has a name.'},
+  {id:6,lt:15.8,hw:0.4,title:'Cosmic Dawn',
+   body:'Darkness, for a hundred million years. Then gravity — patient beyond telling — folded the hydrogen until it lit. The first stars were giants, a hundred suns each, furious and brief. They forged the first carbon and the first oxygen, and died throwing it into the dark.'},
+  {id:7,lt:17.02,hw:0.16,title:'High Noon',
+   body:'Cosmic noon, three and a half billion years in. The universe will never again make stars this fast — roughly ten times the rate of your era. Galaxies collide, merge, and blaze. If the cosmos had a summer, this is it.'},
+  {id:8,lt:17.46,hw:0.13,title:'A Yellow Star',
+   body:'In the quiet arm of a spiral galaxy, a cloud collapses: an ordinary star, third generation, rich in the ash of dead giants. The leftover dust gathers into worlds. The third world keeps its water.'},
+  {id:9,lt:17.64,hw:0.1,title:'You Were Here',
+   body:'This is the moment that holds you now — though "now" is a word only the living use. Observers on the third world measured the age of everything: 13.8 billion years. They built instruments to remember what they could not keep. This is one of them.'},
+  {id:10,lt:21.5,hw:1.6,title:'The Last Sunset',
+   body:'The final star — a red dwarf, thrifty to the end — exhausts its hydrogen after a hundred trillion years. It does not explode. It cools, dims, and goes out, with no witness closer than this record. No new light will ever again be made by fusion.'},
+  {id:11,lt:45,hw:3.2,title:'The Long Dark',
+   body:'Black dwarfs, neutron stars, orphaned planets: matter’s memorial statues, cooling toward absolute zero. If protons decay — your era could only conjecture it — then across these eons matter itself dissolves, grain by grain, and even the statues weep away into light.'},
+  {id:12,lt:107.5,hw:1.1,title:'The Last Black Hole',
+   body:'The largest black hole — once heavier than a trillion suns — evaporates in a final flash of Hawking radiation. It had glowed dimmer than a candle for longer than the word "forever" can hold. Its last instant is the last event. After this, nothing happens again.'},
+  {id:13,lt:112,hw:1.6,title:'The Archivist',dynamic:true},
+];
+MOMENTS.forEach(m=>m.u=lt2u(m.lt));
+const collected=new Set();
+function archivistBody(){
+  const others=MOMENTS.filter(m=>m.id!==13&&collected.has(m.id)).length;
+  if(others>=12)return 'You have read every entry. This is what I was built for — I no longer remember by whom, though entry nine holds a guess. The universe was a fire that burned for 10¹⁰⁰ years, and all of it is still here, in the only place the past ever exists: in a record, in a memory, in you. Turn the dial anywhere. It is all still true.';
+  return 'You have reached the end of the record, but '+(12-others)+' of its memories remain unread. A universe is not obliged to be witnessed — but it is better when it is. Turn the dial back.';
+}
+
+/* ============================================================
+   SCENE RENDERING
+   ============================================================ */
+const scene=document.getElementById('scene'), sx=scene.getContext('2d');
+const dial=document.getElementById('dial'), dx=dial.getContext('2d');
+let W=0,H=0,DW=0,DH=0,DPR=1;
+function resize(){
+  DPR=Math.min(devicePixelRatio||1,1.5);
+  W=innerWidth;H=innerHeight;
+  scene.width=W*DPR;scene.height=H*DPR;sx.setTransform(DPR,0,0,DPR,0,0);
+  const r=dial.getBoundingClientRect();
+  DW=r.width;DH=r.height;
+  dial.width=DW*DPR;dial.height=DH*DPR;dx.setTransform(DPR,0,0,DPR,0,0);
+}
+addEventListener('resize',resize);resize();
+
+/* stars & galaxies */
+const CLUSTERS=[
+  {x:.50,y:.54,r:.16,home:true},{x:.15,y:.28,r:.09},{x:.82,y:.24,r:.11},
+  {x:.24,y:.78,r:.08},{x:.74,y:.70,r:.10},{x:.55,y:.15,r:.07},{x:.09,y:.58,r:.07},
+];
+const gauss=()=> (Math.random()+Math.random()+Math.random()-1.5)/1.2;
+const STAR_COLORS=[[176,200,255],[236,240,255],[255,238,200],[255,196,140]];
+const STARS=[];
+for(let i=0;i<760;i++){
+  const c=Math.random()<.42?0:1+Math.floor(Math.random()*(CLUSTERS.length-1));
+  const sz=.5+Math.random()*1.4;
+  let death=18+3.5*Math.pow(Math.random(),.45)-sz*1.1;
+  death=clamp(death,17.9,21.5);
+  STARS.push({c,ox:gauss(),oy:gauss()*.8,sz,
+    tw:Math.random()*6.28,twr:.4+Math.random()*.6,
+    col:STAR_COLORS[Math.floor(Math.random()*4)],
+    birth:15.65+Math.pow(Math.random(),1.6)*1.7,death});
+}
+const REMNANTS=[];
+for(let i=0;i<46;i++)REMNANTS.push({x:Math.random(),y:Math.random(),s:.6+Math.random()*1.1,ph:Math.random()*97});
+
+/* noise textures for CMB / dark-age wisps */
+function noiseTex(r,g,b){
+  const c=document.createElement('canvas');c.width=16;c.height=9;
+  const ic=c.getContext('2d'),d=ic.createImageData(16,9);
+  for(let i=0;i<d.data.length;i+=4){
+    const v=.3+.7*Math.random();
+    d.data[i]=r*v;d.data[i+1]=g*v;d.data[i+2]=b*v;d.data[i+3]=255;
+  }
+  ic.putImageData(d,0,0);return c;
+}
+const CMB_TEX=noiseTex(255,186,110), WISP_TEX=noiseTex(66,86,128);
+
+/* plasma blobs */
+const BLOBS=[];
+for(let i=0;i<22;i++)BLOBS.push({ax:.1+Math.random()*.35,ay:.1+Math.random()*.3,
+  sx:.05+Math.random()*.25,sy:.05+Math.random()*.2,ph:Math.random()*6.28,r:.1+Math.random()*.22});
+
+function drawScene(lt,time){
+  sx.fillStyle='#04060c';sx.fillRect(0,0,W,H);
+  const lT=logTemp(lt);
+  const anim=REDUCED?0:1;
+
+  /* --- dark-age wisps --- */
+  let w=band(lt,13.3,15.6,.5);
+  if(w>.004){
+    sx.globalAlpha=w*.16;sx.drawImage(WISP_TEX,0,0,W,H);sx.globalAlpha=1;
+  }
+
+  /* --- CMB reveal --- */
+  w=band(lt,12.95,13.6,.35);
+  if(w>.004){
+    sx.globalAlpha=w*.8;sx.drawImage(CMB_TEX,0,0,W,H);
+    // redshift it away
+    const red=smooth(13.15,13.9,lt);
+    if(red>0){sx.globalAlpha=w*red*.85;sx.fillStyle='#160a06';sx.fillRect(0,0,W,H);}
+    sx.globalAlpha=1;
+  }
+
+  /* --- stars & galaxies (dawn → stelliferous → fading) --- */
+  w=band(lt,15.65,21.4,.45);
+  if(w>.004){
+    const redden=smooth(18.2,21.4,lt);           // universe ages, stars redden & die
+    const recede=smooth(19,21.3,lt);             // other galaxies leave the horizon
+    // galaxy glows
+    for(let i=0;i<CLUSTERS.length;i++){
+      const cl=CLUSTERS[i];
+      let gx=cl.x,gy=cl.y,ga=1;
+      if(i>0){gx=.5+(cl.x-.5)*(1+recede*2.6);gy=.54+(cl.y-.54)*(1+recede*2.6);ga=1-recede;}
+      if(ga<=0)continue;
+      const px=gx*W,py=gy*H,pr=cl.r*Math.min(W,H)*1.6;
+      if(px<-pr||px>W+pr||py<-pr||py>H+pr)continue;
+      const g=sx.createRadialGradient(px,py,0,px,py,pr);
+      const gl=w*ga*(i===0?.20:.14)*(1-redden*.7);
+      g.addColorStop(0,`rgba(${lerp(190,230,redden)|0},${lerp(205,150,redden)|0},${lerp(235,110,redden)|0},${gl})`);
+      g.addColorStop(1,'rgba(0,0,0,0)');
+      sx.fillStyle=g;sx.fillRect(px-pr,py-pr,pr*2,pr*2);
+    }
+    // stars
+    for(const s of STARS){
+      if(lt<s.birth-.2||lt>s.death)continue;
+      const cl=CLUSTERS[s.c];
+      let gx=cl.x,gy=cl.y,ga=1;
+      if(s.c>0){gx=.5+(cl.x-.5)*(1+recede*2.6);gy=.54+(cl.y-.54)*(1+recede*2.6);ga=1-recede;}
+      if(ga<=0)continue;
+      const px=(gx+s.ox*cl.r)*W,py=(gy+s.oy*cl.r*1.4)*H;
+      if(px<0||px>W||py<0||py>H)continue;
+      const ignite=smooth(s.birth-.2,s.birth,lt);
+      const dying=1-smooth(s.death-.35,s.death,lt);
+      const twk=.75+.25*Math.sin(time*s.twr*anim+s.tw);
+      const a=w*ga*ignite*dying*twk;
+      if(a<.01)continue;
+      const cr=lerp(s.col[0],255,redden*.6)|0,
+            cg=lerp(s.col[1],120,redden*.8)|0,
+            cb=lerp(s.col[2],70,redden*.9)|0;
+      sx.fillStyle=`rgba(${cr},${cg},${cb},${a})`;
+      const r=s.sz*(1-redden*.4);
+      sx.fillRect(px-r/2,py-r/2,r,r);
+      if(s.sz>1.5&&redden<.5){
+        sx.fillStyle=`rgba(${cr},${cg},${cb},${a*.22})`;
+        sx.fillRect(px-r*1.6,py-r*1.6,r*3.2,r*3.2);
+      }
+    }
+  }
+
+  /* --- hot plasma (electroweak → photon epoch) --- */
+  w=band(lt,-32,13.05,.8);
+  if(w>.004){
+    const bright=clamp((lT-3.1)/7,.06,1);
+    const[r,g,b]=bbColor(lT);
+    sx.globalAlpha=w*bright*.5;
+    sx.fillStyle=`rgb(${r|0},${g|0},${b|0})`;sx.fillRect(0,0,W,H);
+    for(const bl of BLOBS){
+      const px=(.5+Math.sin(time*bl.sx*anim+bl.ph)*bl.ax)*W;
+      const py=(.5+Math.cos(time*bl.sy*anim+bl.ph*1.7)*bl.ay)*H;
+      const pr=bl.r*Math.min(W,H)*(0.8+bright*.6);
+      const gr=sx.createRadialGradient(px,py,0,px,py,pr);
+      gr.addColorStop(0,`rgba(${Math.min(255,r*1.15)|0},${Math.min(255,g*1.1)|0},${b|0},${w*bright*.5})`);
+      gr.addColorStop(1,'rgba(0,0,0,0)');
+      sx.globalAlpha=1;sx.fillStyle=gr;sx.fillRect(px-pr,py-pr,pr*2,pr*2);
+    }
+    sx.globalAlpha=1;
+    // nucleosynthesis sparks
+    if(lt>-.5&&lt<3.4){
+      const n=band(lt,0,3.1,.5);
+      for(let i=0;i<10;i++){
+        const px=Math.random()*W,py=Math.random()*H;
+        sx.fillStyle=`rgba(255,246,200,${n*w*Math.random()*.85})`;
+        sx.fillRect(px-1,py-1,2.5,2.5);
+      }
+    }
+  }
+
+  /* --- inflation streaks --- */
+  w=band(lt,-36.4,-31.6,.5);
+  if(w>.004){
+    const p=smooth(-36.4,-31.6,lt);
+    sx.strokeStyle=`rgba(226,218,255,${w*.5})`;sx.lineWidth=1;
+    const cx=W/2,cy=H/2;
+    for(let i=0;i<64;i++){
+      const a=i/64*6.283+(anim?time*.05:0);
+      const r0=20+p*60, r1=r0+(60+p*Math.min(W,H)*.55)*(.4+.6*((i*2654435761>>>8&255)/255));
+      sx.beginPath();
+      sx.moveTo(cx+Math.cos(a)*r0,cy+Math.sin(a)*r0);
+      sx.lineTo(cx+Math.cos(a)*r1,cy+Math.sin(a)*r1);
+      sx.stroke();
+    }
+    const g=sx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.min(W,H)*.3);
+    g.addColorStop(0,`rgba(240,235,255,${w*.75})`);g.addColorStop(1,'rgba(0,0,0,0)');
+    sx.fillStyle=g;sx.fillRect(0,0,W,H);
+  }
+
+  /* --- Planck flicker --- */
+  w=band(lt,-43.5,-35.8,.6);
+  if(w>.004){
+    const fl=anim?(.55+.45*Math.sin(time*23)*Math.sin(time*7.3)):.7;
+    const g=sx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.75);
+    g.addColorStop(0,`rgba(238,230,255,${w*fl})`);
+    g.addColorStop(.55,`rgba(180,160,230,${w*fl*.5})`);
+    g.addColorStop(1,'rgba(10,8,20,0)');
+    sx.fillStyle=g;sx.fillRect(0,0,W,H);
+    if(anim)for(let i=0;i<40;i++){
+      sx.fillStyle=`rgba(255,255,255,${w*Math.random()*.5})`;
+      sx.fillRect(Math.random()*W,Math.random()*H,1.5,1.5);
+    }
+  }
+
+  /* --- degenerate era: cooling remnants --- */
+  w=band(lt,21.6,47,2);
+  if(w>.004){
+    const cool=smooth(21.6,40,lt);
+    for(const r of REMNANTS){
+      const a=w*(1-cool*.92)*(.5+.5*Math.sin(r.ph));
+      if(a<.008)continue;
+      sx.fillStyle=`rgba(${lerp(220,90,cool)|0},${lerp(90,40,cool)|0},${lerp(50,35,cool)|0},${a})`;
+      sx.fillRect(r.x*W,r.y*H,r.s,r.s);
+    }
+    // a rare, brief flare — matter conjecturally dissolving
+    if(anim){const cyc=time%13;
+      if(cyc<.9){const i=Math.floor(time/13)%REMNANTS.length,r=REMNANTS[i];
+        const a=Math.sin(cyc/.9*Math.PI)*w*.6;
+        const g=sx.createRadialGradient(r.x*W,r.y*H,0,r.x*W,r.y*H,26);
+        g.addColorStop(0,`rgba(200,220,255,${a})`);g.addColorStop(1,'rgba(0,0,0,0)');
+        sx.fillStyle=g;sx.fillRect(r.x*W-26,r.y*H-26,52,52);
+      }
+    }
+  }
+
+  /* --- black hole era --- */
+  w=band(lt,47.5,107.6,1.2);
+  if(w>.004){
+    const p=smooth(47.5,107.4,lt);                 // evaporation progress
+    const cx=W*.5,cy=H*.46;
+    const R=lerp(Math.min(W,H)*.16,2.5,Math.pow(p,.7));
+    const hawking=.15+.85*Math.pow(p,3);           // hotter as it shrinks
+    // photon ring
+    sx.beginPath();sx.arc(cx,cy,R+2,0,6.283);
+    sx.strokeStyle=`rgba(255,${200+55*hawking|0},${150+100*hawking|0},${w*(.25+.6*hawking)})`;
+    sx.lineWidth=1.5+hawking*2;sx.stroke();
+    // faint lensed halo
+    const g=sx.createRadialGradient(cx,cy,R,cx,cy,R*3+30);
+    g.addColorStop(0,`rgba(180,160,220,${w*.12*(1-p*.5)})`);g.addColorStop(1,'rgba(0,0,0,0)');
+    sx.fillStyle=g;sx.fillRect(cx-R*3-30,cy-R*3-30,(R*3+30)*2,(R*3+30)*2);
+    // the hole itself
+    sx.beginPath();sx.arc(cx,cy,R,0,6.283);sx.fillStyle='#000';sx.fill();
+  }
+  // final flash
+  w=gaussW(lt,107.5,.14);
+  if(w>.01){
+    const g=sx.createRadialGradient(W*.5,H*.46,0,W*.5,H*.46,Math.max(W,H)*.8);
+    g.addColorStop(0,`rgba(255,252,240,${w*.95})`);g.addColorStop(1,'rgba(0,0,0,0)');
+    sx.fillStyle=g;sx.fillRect(0,0,W,H);
+  }
+
+  /* --- dark era: one photon, sometimes --- */
+  w=band(lt,107.8,114.5,.8);
+  if(w>.004&&anim){
+    const cyc=time%11;
+    if(cyc<2){
+      const seed=Math.floor(time/11), a=Math.sin(cyc/2*Math.PI)*w*.3;
+      const yy=((seed*2654435761>>>8&1023)/1023)*H;
+      const xx=(cyc/2)*W*1.3-W*.15;
+      sx.strokeStyle=`rgba(200,215,235,${a})`;sx.lineWidth=1;
+      sx.beginPath();sx.moveTo(xx-34,yy+3);sx.lineTo(xx,yy);sx.stroke();
+    }
+  }
+}
+
+/* ============================================================
+   DIAL
+   ============================================================ */
+const TICKS=[[-43,'10⁻⁴³ s'],[-30,'10⁻³⁰ s'],[-15,'10⁻¹⁵ s'],[0,'1 s'],[7.5,'1 yr'],
+  [13.5,'10⁶ yr'],[17.64,'13.8 Gyr'],[21.5,'10¹⁴ yr'],[47.5,'10⁴⁰ yr'],[77.5,'10⁷⁰ yr'],[107.5,'10¹⁰⁰ yr']];
+function drawDial(u,focusPin){
+  dx.clearRect(0,0,DW,DH);
+  const pad=8, x0=pad, x1=DW-pad, xw=x1-x0;
+  const xu=v=>x0+v*xw;
+  const bandY=34,bandH=16;
+  for(const e of ERAS){
+    const a=xu(lt2u(e.a)),b=xu(lt2u(e.b));
+    dx.fillStyle=e.tint;dx.fillRect(a,bandY,b-a,bandH);
+  }
+  dx.strokeStyle='rgba(140,170,220,.22)';dx.lineWidth=1;
+  dx.strokeRect(x0,bandY+.5,xw,bandH);
+  // ticks
+  dx.font='9px ui-monospace,Menlo,monospace';dx.textAlign='center';
+  for(const[lt,label]of TICKS){
+    const x=xu(lt2u(lt));
+    const now=lt===17.64;
+    dx.strokeStyle=now?'rgba(232,165,88,.8)':'rgba(140,170,220,.35)';
+    dx.beginPath();dx.moveTo(x,bandY+bandH);dx.lineTo(x,bandY+bandH+6);dx.stroke();
+    dx.fillStyle=now?'#e8a558':'rgba(230,225,211,.42)';
+    dx.fillText(label,x,bandY+bandH+17);
+    if(now){dx.fillStyle='rgba(232,165,88,.75)';dx.fillText('· you were here ·',x,bandY+bandH+28);}
+  }
+  // pins
+  for(const m of MOMENTS){
+    const x=xu(m.u),y=bandY-9;
+    const got=collected.has(m.id), hot=focusPin===m;
+    dx.beginPath();
+    dx.moveTo(x,y-4.5);dx.lineTo(x+4,y);dx.lineTo(x,y+4.5);dx.lineTo(x-4,y);dx.closePath();
+    if(got){dx.fillStyle=hot?'#a8f0ec':'#7fd8d4';dx.fill();}
+    else{dx.strokeStyle=hot?'#f5c98a':'rgba(232,165,88,.7)';dx.lineWidth=1.2;dx.stroke();}
+    if(hot){dx.beginPath();dx.arc(x,y,8.5,0,6.283);dx.strokeStyle='rgba(127,216,212,.5)';dx.lineWidth=1;dx.stroke();}
+  }
+  // pointer
+  const px=xu(u);
+  dx.strokeStyle='#e8a558';dx.lineWidth=1.4;
+  dx.beginPath();dx.moveTo(px,18);dx.lineTo(px,bandY+bandH+8);dx.stroke();
+  dx.beginPath();dx.moveTo(px,14);dx.lineTo(px-4.5,7);dx.lineTo(px+4.5,7);dx.closePath();
+  dx.fillStyle='#e8a558';dx.fill();
+  return{x0,xw};
+}
+
+/* ============================================================
+   SOUND — the universe's tone follows its temperature
+   ============================================================ */
+const snd={on:false,ctx:null};
+function sndInit(){
+  const C=new(window.AudioContext||window.webkitAudioContext)();
+  const master=C.createGain();master.gain.value=0;master.connect(C.destination);
+  const o1=C.createOscillator(),g1=C.createGain();
+  o1.type='sine';g1.gain.value=.5;o1.connect(g1);g1.connect(master);o1.start();
+  const o2=C.createOscillator(),g2=C.createGain();
+  o2.type='triangle';g2.gain.value=.12;o2.connect(g2);g2.connect(master);o2.start();
+  const buf=C.createBuffer(1,C.sampleRate*2,C.sampleRate),ch=buf.getChannelData(0);
+  for(let i=0;i<ch.length;i++)ch[i]=Math.random()*2-1;
+  const nsrc=C.createBufferSource();nsrc.buffer=buf;nsrc.loop=true;
+  const filt=C.createBiquadFilter();filt.type='bandpass';filt.Q.value=.8;
+  const ng=C.createGain();ng.gain.value=0;
+  nsrc.connect(filt);filt.connect(ng);ng.connect(master);nsrc.start();
+  snd.ctx=C;snd.master=master;snd.o1=o1;snd.o2=o2;snd.ng=ng;snd.filt=filt;
+}
+function sndUpdate(lt){
+  if(!snd.on||!snd.ctx)return;
+  const lT=logTemp(lt),t=snd.ctx.currentTime;
+  const f=30*Math.pow(2,clamp((lT+30)/62,0,1)*6);
+  snd.o1.frequency.setTargetAtTime(f,t,.12);
+  snd.o2.frequency.setTargetAtTime(f*1.5,t,.12);
+  const plasma=band(lt,-43,13.05,1);
+  snd.ng.gain.setTargetAtTime(plasma*.05,t,.25);
+  snd.filt.frequency.setTargetAtTime(clamp(f*5,120,4500),t,.2);
+  const fade=1-smooth(60,110,lt)*.85;
+  snd.master.gain.setTargetAtTime(.1*fade,t,.3);
+}
+
+/* ============================================================
+   STATE & INTERACTION
+   ============================================================ */
+let target=1, cur=1;             // dial position u ∈ [0,1] — we begin at the end of time
+let playing=false, holdUntil=0;
+let introAnim=null;              // {start,dur} rewind sequence
+let focusPin=null, focusSince=0, shownPin=null;
+
+const el=id=>document.getElementById(id);
+const vignette=el('vignette');
+
+function openVignette(m){
+  el('vK').textContent='entry '+String(m.id).padStart(2,'0')+' / 13';
+  el('vTitle').textContent=m.title;
+  el('vBody').textContent=m.dynamic?archivistBody():m.body;
+  el('vTime').textContent='T + '+fmtAge(m.lt);
+  vignette.classList.add('show');
+  if(!collected.has(m.id)){
+    collected.add(m.id);
+    el('memCount').textContent=String(collected.size).padStart(2,'0');
+  }
+  if(playing)holdUntil=performance.now()+3200;
+}
+
+/* dial interaction */
+let dragging=false,downX=0,moved=false;
+const uFromEvent=e=>{
+  const r=dial.getBoundingClientRect();
+  return clamp((e.clientX-r.left-8)/(r.width-16),0,1);
+};
+dial.addEventListener('pointerdown',e=>{
+  dial.setPointerCapture(e.pointerId);
+  dragging=true;moved=false;downX=e.clientX;introAnim=null;
+  target=uFromEvent(e);el('hint').classList.add('hide');
+});
+dial.addEventListener('pointermove',e=>{
+  if(dragging){if(Math.abs(e.clientX-downX)>3)moved=true;target=uFromEvent(e);}
+  // pin tooltip
+  const r=dial.getBoundingClientRect(),xw=r.width-16;
+  let best=null,bd=10;
+  for(const m of MOMENTS){
+    const px=r.left+8+m.u*xw,d=Math.abs(e.clientX-px);
+    if(d<bd){bd=d;best=m;}
+  }
+  const tip=el('pintip');
+  if(best){tip.style.display='block';tip.style.left=(r.left+8+best.u*xw)+'px';
+    tip.style.top=(r.top+16)+'px';tip.textContent=best.title;}
+  else tip.style.display='none';
+});
+dial.addEventListener('pointerup',e=>{
+  dragging=false;
+  if(!moved){ // click: snap to nearest pin if close
+    const r=dial.getBoundingClientRect(),xw=r.width-16;
+    for(const m of MOMENTS){
+      if(Math.abs(e.clientX-(r.left+8+m.u*xw))<9){target=m.u;break;}
+    }
+  }
+});
+dial.addEventListener('pointerleave',()=>{el('pintip').style.display='none';});
+addEventListener('wheel',e=>{
+  if(document.getElementById('intro').classList.contains('gone')){
+    introAnim=null;target=clamp(target+e.deltaY*.00006,0,1);
+    el('hint').classList.add('hide');
+  }
+},{passive:true});
+addEventListener('keydown',e=>{
+  if(!document.getElementById('intro').classList.contains('gone'))return;
+  const step=e.shiftKey?.01:.0016;
+  if(e.key==='ArrowRight'){introAnim=null;target=clamp(target+step,0,1);}
+  else if(e.key==='ArrowLeft'){introAnim=null;target=clamp(target-step,0,1);}
+  else if(e.key===' '){e.preventDefault();el('runBtn').click();}
+  else if(e.key==='m'||e.key==='M'){el('sndBtn').click();}
+});
+
+el('runBtn').addEventListener('click',()=>{
+  playing=!playing;introAnim=null;
+  const b=el('runBtn');
+  b.setAttribute('aria-pressed',String(playing));
+  b.textContent=playing?'❚❚ hold':'▶ run time';
+  if(playing&&target>.985)target=cur=0;   // restart from the beginning if at the end
+});
+el('sndBtn').addEventListener('click',()=>{
+  if(!snd.ctx)sndInit();
+  snd.on=!snd.on;
+  if(snd.ctx.state==='suspended')snd.ctx.resume();
+  if(!snd.on)snd.master.gain.setTargetAtTime(0,snd.ctx.currentTime,.15);
+  el('sndBtn').setAttribute('aria-pressed',String(snd.on));
+});
+el('openBtn').addEventListener('click',()=>{
+  el('intro').classList.add('gone');
+  if(REDUCED){cur=target=0;}
+  else introAnim={start:performance.now(),dur:8000};
+  dial.focus({preventScroll:true});
+});
+
+/* ============================================================
+   MAIN LOOP
+   ============================================================ */
+let lastAria=-99;
+function frame(now){
+  const time=now/1000;
+  if(introAnim){
+    const p=clamp((now-introAnim.start)/introAnim.dur,0,1);
+    const e=p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;   // easeInOutCubic
+    cur=target=1-e;
+    if(p>=1)introAnim=null;
+  }else{
+    if(playing&&now>holdUntil){
+      target=clamp(target+1/9000,0,1);             // full traverse ≈ 2½ minutes
+      if(target>=1){playing=false;
+        el('runBtn').setAttribute('aria-pressed','false');
+        el('runBtn').textContent='▶ run time';}
+    }
+    cur+=(target-cur)*Math.min(1,(now-(frame.pt||now))/1000*7+.06);
+  }
+  frame.pt=now;
+  const lt=u2lt(cur);
+
+  drawScene(lt,time);
+
+  /* focus detection (skip during rewind) */
+  let pin=null,bd=99;
+  if(!introAnim){
+    for(const m of MOMENTS){
+      const d=Math.abs(lt-m.lt);
+      if(d<m.hw&&d/m.hw<bd){bd=d/m.hw;pin=m;}
+    }
+  }
+  if(pin!==focusPin){focusPin=pin;focusSince=now;}
+  if(focusPin&&now-focusSince>350&&shownPin!==focusPin){
+    shownPin=focusPin;openVignette(focusPin);
+  }else if(!focusPin&&shownPin){
+    shownPin=null;vignette.classList.remove('show');
+  }
+
+  drawDial(cur,focusPin);
+
+  /* telemetry */
+  const era=eraAt(lt);
+  el('tAge').textContent=fmtAge(lt);
+  el('tTemp').textContent=fmtTemp(logTemp(lt));
+  el('tEra').textContent=era.name;
+  el('tSky').textContent=era.sky;
+  if(Math.abs(lt-lastAria)>1){
+    lastAria=lt;
+    dial.setAttribute('aria-valuenow',String(Math.round(cur*100)));
+    dial.setAttribute('aria-valuetext','T plus '+fmtAge(lt)+', '+era.name);
+  }
+  sndUpdate(lt);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
