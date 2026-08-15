@@ -134,9 +134,13 @@
   .intro .fine{margin-top:34px;font-size:9px;letter-spacing:.24em;color:rgba(230,225,211,.28);text-transform:uppercase}
 
   @media (max-width:760px){
-    .telemetry{min-width:0;font-size:10px}
+    .telemetry{min-width:0;font-size:10px;max-width:calc(100vw - 148px)}
     .telemetry .row.optional{display:none}
-    .vignette{left:50%;top:auto;bottom:150px;transform:translate(-50%,8px)}
+    .controls{flex-direction:column;align-items:flex-end;gap:6px}
+    .chip,.btn{padding:6px 10px;font-size:9px}
+    .hint{display:none}
+    .dial-wrap{padding:22px 12px 10px}
+    .vignette{left:50%;top:auto;bottom:130px;transform:translate(-50%,8px)}
     .vignette.show{transform:translate(-50%,0)}
   }
   @media (prefers-reduced-motion:reduce){
@@ -556,8 +560,9 @@ function drawScene(lt,time){
 /* ============================================================
    DIAL
    ============================================================ */
-const TICKS=[[-43,'10⁻⁴³ s'],[-30,'10⁻³⁰ s'],[-15,'10⁻¹⁵ s'],[0,'1 s'],[7.5,'1 yr'],
-  [13.5,'10⁶ yr'],[17.64,'13.8 Gyr'],[21.5,'10¹⁴ yr'],[47.5,'10⁴⁰ yr'],[77.5,'10⁷⁰ yr'],[107.5,'10¹⁰⁰ yr']];
+/* third field: 1 = keep on narrow screens, 0 = desktop only */
+const TICKS=[[-43,'10⁻⁴³ s',1],[-30,'10⁻³⁰ s',0],[-15,'10⁻¹⁵ s',0],[0,'1 s',1],[7.5,'1 yr',0],
+  [13.5,'10⁶ yr',0],[17.64,'13.8 Gyr',1],[21.5,'10¹⁴ yr',0],[47.5,'10⁴⁰ yr',1],[77.5,'10⁷⁰ yr',1],[107.5,'10¹⁰⁰ yr',1]];
 function drawDial(u,focusPin){
   dx.clearRect(0,0,DW,DH);
   const pad=8, x0=pad, x1=DW-pad, xw=x1-x0;
@@ -569,16 +574,21 @@ function drawDial(u,focusPin){
   }
   dx.strokeStyle='rgba(140,170,220,.22)';dx.lineWidth=1;
   dx.strokeRect(x0,bandY+.5,xw,bandH);
-  // ticks
+  // ticks — fewer on narrow screens, and labels clamped so edge ticks don't clip
   dx.font='9px ui-monospace,Menlo,monospace';dx.textAlign='center';
-  for(const[lt,label]of TICKS){
+  const compact=DW<700;
+  for(const[lt,label,pri]of TICKS){
+    if(compact&&!pri)continue;
     const x=xu(lt2u(lt));
     const now=lt===17.64;
     dx.strokeStyle=now?'rgba(232,165,88,.8)':'rgba(140,170,220,.35)';
     dx.beginPath();dx.moveTo(x,bandY+bandH);dx.lineTo(x,bandY+bandH+6);dx.stroke();
     dx.fillStyle=now?'#e8a558':'rgba(230,225,211,.42)';
-    dx.fillText(label,x,bandY+bandH+17);
-    if(now){dx.fillStyle='rgba(232,165,88,.75)';dx.fillText('· you were here ·',x,bandY+bandH+28);}
+    const hw=dx.measureText(label).width/2;
+    dx.fillText(label,clamp(x,hw+2,DW-hw-2),bandY+bandH+17);
+    if(now){dx.fillStyle='rgba(232,165,88,.75)';
+      const hw2=dx.measureText('· you were here ·').width/2;
+      dx.fillText('· you were here ·',clamp(x,hw2+2,DW-hw2-2),bandY+bandH+28);}
   }
   // pins
   for(const m of MOMENTS){
